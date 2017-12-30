@@ -12,7 +12,10 @@ import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
+import android.util.Log;
+import android.view.View;
 import android.view.Window;
+import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
@@ -47,8 +50,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     LocationManager mLocationManager;
 
-    List<String> nameUsers = new ArrayList<String>();
-    List<String> idUsers = new ArrayList<String>();
+    List<String> nameUsers = new ArrayList<>();
+    List<String> idUsers = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -66,24 +69,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         DatabaseReference users;
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
-
-        //VERIFICATION DE LA BDD
-
         users = database.getReference("users");
 
         users.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot dataSnapshot) {
 
-                String mtoken = FirebaseInstanceId.getInstance().getToken();
-
-                for (DataSnapshot data : dataSnapshot.getChildren()) {
-                    if (!data.child(mtoken).exists()) {
-
-                        DatabaseReference myRef = database.getReference("users/"+mtoken);
-                        myRef.child("name").setValue("admin");
-                        myRef.child("id").setValue(mtoken);
-                    }
+                for (DataSnapshot dsp : dataSnapshot.getChildren()) {
+                    String name = dsp.child("name").getValue().toString();
+                    String id = dsp.child("id").getValue().toString();
+                    addToFriendsList(name, id);
                 }
             }
 
@@ -91,37 +86,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onCancelled(DatabaseError databaseError) {
             }
         });
-
-        users.addChildEventListener(new ChildEventListener() {
-            @Override
-            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
-            }
-
-            @Override
-            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
-                String name = dataSnapshot.child("name").getValue().toString();
-                String id = dataSnapshot.child("id").getValue().toString();
-
-                addToFriendsList(name, id);
-            }
-
-            @Override
-            public void onChildRemoved(DataSnapshot dataSnapshot) {
-
-            }
-
-            @Override
-            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
-
-            }
-
-            @Override
-            public void onCancelled(DatabaseError databaseError) {
-
-            }
-        });
-
-
 
         //CREATION DE LA CARTE GOOGLE
 
@@ -160,17 +124,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
 
     private void addToFriendsList(String name, String id) {
-        ListView mFriendsList = (ListView) findViewById(R.id.friendsList);
+        ListView mFriendsList = findViewById(R.id.friendsList);
 
         nameUsers.add(name);
         idUsers.add(id);
 
         //PARTIE AFFICHAGE
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
                 android.R.layout.simple_list_item_1, nameUsers);
 
         mFriendsList.setAdapter(adapter);
+
+        mFriendsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // Get the selected item text from ListView
+                String selectedItem = (String) parent.getItemAtPosition(position);
+                Log.d("BUTTONCLICK", idUsers.get(position));
+            }
+        });
     }
 
     private String nameDialog(){
