@@ -13,6 +13,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
+import android.util.Pair;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -39,7 +40,9 @@ import com.lize.oledcomm.camera_lifisdk_android.LiFiSdkManager;
 import com.lize.oledcomm.camera_lifisdk_android.V1.LiFiCamera;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -48,11 +51,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     private SupportMapFragment fragment;
     private String m_Text = "";
 
+    private boolean loaded = false;
+
     LocationManager mLocationManager;
 
-    List<String> nameUsers = new ArrayList<>();
-    List<String> idUsers = new ArrayList<>();
-
+    //K: ID, V: Name
+    List<String> names = new ArrayList<>();
+    List<String> ids = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -62,23 +67,25 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onStart() {
         super.onStart();
-    }
-
-    protected void onResume() {
-        super.onResume();
 
         DatabaseReference users;
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         users = database.getReference("users");
 
+        final String token = FirebaseInstanceId.getInstance().getToken();
+
+        ListView mFriendsList = findViewById(R.id.friendsList);
+        final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
+                android.R.layout.simple_list_item_1, names);
+        mFriendsList.setAdapter(adapter);
+
         users.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot dataSnapshot) {
 
-                for (DataSnapshot dsp : dataSnapshot.getChildren()) {
-                    String name = dsp.child("name").getValue().toString();
-                    String id = dsp.child("id").getValue().toString();
-                    addToFriendsList(name, id);
+
+                if (!dataSnapshot.hasChild(token)) {
+                    addUserToDB(database, token);
                 }
             }
 
@@ -86,6 +93,55 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             public void onCancelled(DatabaseError databaseError) {
             }
         });
+
+        users.addChildEventListener(new ChildEventListener() {
+            @Override
+            public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                String name = dataSnapshot.child("name").getValue().toString();
+                if (!dataSnapshot.getKey().equals(token)) {
+                    names.add(name);
+                    ids.add(dataSnapshot.getKey());
+                    adapter.notifyDataSetChanged();
+                }
+            }
+
+            @Override
+            public void onChildChanged(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onChildRemoved(DataSnapshot dataSnapshot) {
+                String name = dataSnapshot.child("name").getValue().toString();
+                names.remove(name);
+                ids.remove(dataSnapshot.getKey());
+                adapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onChildMoved(DataSnapshot dataSnapshot, String s) {
+
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
+            }
+        });
+
+        mFriendsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                // Get the selected item text from ListView
+                String selectedItem = (String) parent.getItemAtPosition(position);
+                Log.d("BUTTONCLICK", ids.get(position));
+            }
+        });
+
+    }
+
+    protected void onResume() {
+        super.onResume();
 
         //CREATION DE LA CARTE GOOGLE
 
@@ -123,27 +179,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         liFiSdkManager.start();
     }
 
-    private void addToFriendsList(String name, String id) {
-        ListView mFriendsList = findViewById(R.id.friendsList);
-
-        nameUsers.add(name);
-        idUsers.add(id);
-
-        //PARTIE AFFICHAGE
-
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(this,
-                android.R.layout.simple_list_item_1, nameUsers);
-
-        mFriendsList.setAdapter(adapter);
-
-        mFriendsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
-            @Override
-            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Get the selected item text from ListView
-                String selectedItem = (String) parent.getItemAtPosition(position);
-                Log.d("BUTTONCLICK", idUsers.get(position));
-            }
-        });
+    private void addUserToDB(FirebaseDatabase database, String token) {
+        String name = android.os.Build.MANUFACTURER + android.os.Build.PRODUCT;
+        DatabaseReference myRef = database.getReference("users/" + token);
+        myRef.child("name").setValue(name);
     }
 
     private String nameDialog(){
