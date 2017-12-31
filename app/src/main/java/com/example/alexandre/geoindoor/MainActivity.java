@@ -26,7 +26,9 @@ import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
+import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
+import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
@@ -58,6 +60,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     //K: ID, V: Name
     List<String> names = new ArrayList<>();
     List<String> ids = new ArrayList<>();
+    List<Marker> markers = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -97,6 +100,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         users.addChildEventListener(new ChildEventListener() {
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
+                GoogleMap googleMap = null;
                 String name = dataSnapshot.child("name").getValue().toString();
                 if (!dataSnapshot.getKey().equals(token)) {
                     names.add(name);
@@ -250,11 +254,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             double longitude = bestLocation.getLongitude();
             double latitude = bestLocation.getLatitude();
 
-            googleMap.addMarker(new MarkerOptions()
+            Marker mymarker = googleMap.addMarker(new MarkerOptions()
                     .position(new LatLng(latitude, longitude))
-                    .title("Votre position"));
+                    .title("Votre position")
+                    .snippet(latitude+", "+longitude)
+                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
 
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 15));
+            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
         }
     }
 }
