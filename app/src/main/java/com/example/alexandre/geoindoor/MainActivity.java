@@ -51,7 +51,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LiFiSdkManager liFiSdkManager;
     private SupportMapFragment fragment;
-    private String m_Text = "";
+    private String name = "";
 
     private boolean loaded = false;
 
@@ -183,32 +183,30 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         liFiSdkManager.start();
     }
 
-    private void addUserToDB(FirebaseDatabase database, String token) {
-        String name = android.os.Build.MANUFACTURER + android.os.Build.PRODUCT;
-        DatabaseReference myRef = database.getReference("users/" + token);
-        myRef.child("name").setValue(name);
-    }
-
-    private String nameDialog(){
+    private void addUserToDB(final FirebaseDatabase database, final String token) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Title");
+        builder.setTitle("Entrez votre nom");
 
-// Set up the input
         final EditText input = new EditText(this);
-// Specify the type of input expected; this, for example, sets the input as a password, and will mask the text
-        input.setInputType(InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_PASSWORD);
+        input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
 
-// Set up the buttons
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                m_Text = input.getText().toString();
+                name = input.getText().toString();
+                DatabaseReference myRef = database.getReference("users/" + token);
+                myRef.child("name").setValue(name);
+            }
+        });
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.cancel();
             }
         });
 
         builder.show();
-        return m_Text;
     }
 
     protected void onPause() {
