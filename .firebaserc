@@ -1,5 +1,6 @@
 {
   "projects": {
-    "default": "geo-indoor-3619e"
+    "default": "geo-indoor-3619e",
+    "geoindoor": "geo-indoor-3619e"
   }
 }

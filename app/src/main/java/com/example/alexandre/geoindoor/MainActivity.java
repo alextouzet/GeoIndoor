@@ -4,6 +4,7 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
@@ -21,6 +22,7 @@ import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
@@ -37,6 +39,7 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.iid.FirebaseInstanceId;
+import com.google.firebase.messaging.FirebaseMessaging;
 import com.lize.oledcomm.camera_lifisdk_android.ILiFiPosition;
 import com.lize.oledcomm.camera_lifisdk_android.LiFiSdkManager;
 import com.lize.oledcomm.camera_lifisdk_android.V1.LiFiCamera;
@@ -45,6 +48,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
@@ -75,7 +79,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         users = database.getReference("users");
 
-        final String token = FirebaseInstanceId.getInstance().getToken();
+        SharedPreferences prefs = getSharedPreferences("id", 0);
+
+        if (!prefs.contains("id")){
+            SharedPreferences.Editor mEditor = prefs.edit();
+            mEditor.putString("id", UUID.randomUUID().toString()).commit();
+        }
+
+        final String token = prefs.getString("id", null);
 
         ListView mFriendsList = findViewById(R.id.friendsList);
         final ArrayAdapter<String> adapter = new ArrayAdapter<String>(this,
@@ -141,6 +152,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("BUTTONCLICK", ids.get(position));
             }
         });
+
+        subscribeToTopic();
 
     }
 
@@ -260,5 +273,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
         }
+    }
+    public void subscribeToTopic() {
+        FirebaseMessaging.getInstance().subscribeToTopic("notif"+getSharedPreferences("id",0).getString("id", null));
+        Toast.makeText(this, "Subscribed to Topic: Notifications", Toast.LENGTH_SHORT).show();
     }
 }

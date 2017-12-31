@@ -2,8 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="com.example.alexandre.geoindoor">
 
-    <uses-permission android:name="android.permission.INTERNET" />
-    <uses-permission android:name="android.permission.CAMERA" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.CAMERA"/>
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
 
@@ -21,9 +21,9 @@
             android:name="com.google.android.geo.API_KEY"
             android:value="AIzaSyBEetF8mo7-w7njLU6T7J6oGo4iium3ne4" />
 
-        <service android:name=".MyFirebaseMessagingService">
+        <service android:name=".onMessageReceived">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT" />
+                <action android:name="com.google.firebase.MESSAGING_EVENT"/>
             </intent-filter>
         </service>
 
@@ -35,10 +35,6 @@
             </intent-filter>
         </activity>
 
-        <service
-            android:name=".onMessageReceived"
-            android:enabled="true"
-            android:exported="true"></service>
     </application>
 
 </manifest>
