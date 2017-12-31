@@ -15,6 +15,7 @@ import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
 import android.util.Pair;
+import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
@@ -276,6 +277,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     }
     public void subscribeToTopic() {
         FirebaseMessaging.getInstance().subscribeToTopic("notif"+getSharedPreferences("id",0).getString("id", null));
-        Toast.makeText(this, "Subscribed to Topic: Notifications", Toast.LENGTH_SHORT).show();
+        Log.d("wtf","wtf");
     }
 }
