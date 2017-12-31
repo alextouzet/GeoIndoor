@@ -56,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LiFiSdkManager liFiSdkManager;
     private SupportMapFragment fragment;
-    private String name = "";
+    String name = "";
 
     private boolean loaded = false;
 
@@ -75,6 +75,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     protected void onStart() {
         super.onStart();
+
 
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference users = database.getReference("users");
@@ -97,7 +98,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onDataChange(final DataSnapshot dataSnapshot) {
 
-
                 if (!dataSnapshot.hasChild(token)) {
                     addUserToDB(database, token);
                 }
@@ -112,12 +112,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onChildAdded(DataSnapshot dataSnapshot, String s) {
                 GoogleMap googleMap = null;
-                String name = dataSnapshot.child("name").getValue().toString();
+                String currname = dataSnapshot.child("name").getValue().toString();
                 if (!dataSnapshot.getKey().equals(token)) {
-                    names.add(name);
+                    names.add(currname);
                     ids.add(dataSnapshot.getKey());
                     adapter.notifyDataSetChanged();
                 }
+                else
+                    name = currname;
             }
 
             @Override
@@ -151,10 +153,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Log.d("BUTTONCLICK", ids.get(position));
                 DatabaseReference messageRef = database.getReference("messages");
-                messageRef.push().setValue(new Message("yo tt le mon2", "c squeezie"));
+                messageRef.push().setValue(new Message(ids.get(position), token, "Envoie ta position stp", "De la part de: " + name));
             }
         });
-
         subscribeToTopic();
 
     }
