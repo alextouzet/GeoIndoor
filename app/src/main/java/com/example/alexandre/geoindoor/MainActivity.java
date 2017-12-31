@@ -76,9 +76,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onStart() {
         super.onStart();
 
-        DatabaseReference users;
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
-        users = database.getReference("users");
+        DatabaseReference users = database.getReference("users");
 
         SharedPreferences prefs = getSharedPreferences("id", 0);
 
@@ -151,6 +150,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 // Get the selected item text from ListView
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Log.d("BUTTONCLICK", ids.get(position));
+                DatabaseReference messageRef = database.getReference("messages");
+                messageRef.push().setValue(new Message("yo tt le mon2", "c squeezie"));
             }
         });
 
@@ -266,7 +267,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             double longitude = bestLocation.getLongitude();
             double latitude = bestLocation.getLatitude();
 
-            Marker mymarker = googleMap.addMarker(new MarkerOptions()
+            googleMap.addMarker(new MarkerOptions()
                     .position(new LatLng(latitude, longitude))
                     .title("Votre position")
                     .snippet(latitude+", "+longitude)
@@ -275,8 +276,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
         }
     }
+
     public void subscribeToTopic() {
-        FirebaseMessaging.getInstance().subscribeToTopic("notif"+getSharedPreferences("id",0).getString("id", null));
-        Log.d("wtf","wtf");
+        FirebaseMessaging.getInstance().subscribeToTopic("notifications");
+        Log.d("Subscribe to","notifications");
     }
 }
