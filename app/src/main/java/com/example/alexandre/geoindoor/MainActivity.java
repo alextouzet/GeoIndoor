@@ -55,8 +55,11 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private LiFiSdkManager liFiSdkManager;
+    private String detectedLamp, lamp;
+    private double longitude, latitude;
     private SupportMapFragment fragment;
     String name = "";
+    private GoogleMap map;
 
     private boolean loaded = false;
 
@@ -71,11 +74,41 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onCreate(savedInstanceState);
         this.requestWindowFeature(Window.FEATURE_NO_TITLE);
         setContentView(R.layout.activity_main);
+
+        Boolean asked;
+        if (getIntent().getExtras() != null) {
+            if (!(boolean) getIntent().getExtras().get("asked")) {
+
+                DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
+                messageRef.push().setValue
+                        (new Message(
+                                (String) getIntent().getExtras().get("receiver"),
+                                (String) getIntent().getExtras().get("sender"),
+                                "Voici ma position",
+                                name,
+                                lamp,
+                                latitude,
+                                longitude
+                        ));
+
+
+            }
+            else{
+                latitude = Double.parseDouble((String) getIntent().getExtras().get("latitude"));
+                longitude = Double.parseDouble((String) getIntent().getExtras().get("longitude"));
+                map.addMarker(new MarkerOptions()
+                        .position(new LatLng(latitude, longitude))
+                        .title((String) getIntent().getExtras().get("message"))
+                        .snippet(latitude+", "+longitude));
+
+                map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
+            }
+        }
     }
+
 
     protected void onStart() {
         super.onStart();
-
 
         final FirebaseDatabase database = FirebaseDatabase.getInstance();
         DatabaseReference users = database.getReference("users");
@@ -153,7 +186,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 String selectedItem = (String) parent.getItemAtPosition(position);
                 Log.d("BUTTONCLICK", ids.get(position));
                 DatabaseReference messageRef = database.getReference("messages");
-                messageRef.push().setValue(new Message(ids.get(position), token, "Envoie ta position stp", "De la part de: " + name));
+                messageRef.push().setValue
+                        (new Message(
+                                ids.get(position),
+                                token,
+                                "Position request",
+                                "De la part de: " + name));
             }
         });
         subscribeToTopic();
@@ -185,6 +223,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 "token", "user", new ILiFiPosition() {
             @Override
             public void onLiFiPositionUpdate(String lamp) {
+                detectedLamp = lamp;
                 TextView locationStatus = findViewById(R.id.locationStatus);
                 if(lamp.contains("No lamp detected")){
                     locationStatus.setText("Scannez une lampe avec l'appareil frontal...");
@@ -236,7 +275,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onMapReady(GoogleMap googleMap) {
-
+        this.map = googleMap;
         LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
         Criteria criteria = new Criteria();
 
@@ -264,9 +303,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 bestLocation = l;
             }
         }
-        if(bestLocation!=null) {
-            double longitude = bestLocation.getLongitude();
-            double latitude = bestLocation.getLatitude();
+        if(bestLocation != null) {
+            longitude = bestLocation.getLongitude();
+            latitude = bestLocation.getLatitude();
 
             googleMap.addMarker(new MarkerOptions()
                     .position(new LatLng(latitude, longitude))
