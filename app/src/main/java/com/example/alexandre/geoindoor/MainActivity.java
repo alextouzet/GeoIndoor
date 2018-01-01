@@ -360,17 +360,4 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         FirebaseMessaging.getInstance().subscribeToTopic("notifications");
         Log.d("Subscribe to", "notifications");
     }
-
-    public void initChannels(Context context) {
-        if (Build.VERSION.SDK_INT < 26) {
-            return;
-        }
-        NotificationManager notificationManager =
-                (NotificationManager) context.getSystemService(Context.NOTIFICATION_SERVICE);
-        NotificationChannel channel = new NotificationChannel("default",
-                "Channel name",
-                NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setDescription("Channel description");
-        notificationManager.createNotificationChannel(channel);
-    }
 }

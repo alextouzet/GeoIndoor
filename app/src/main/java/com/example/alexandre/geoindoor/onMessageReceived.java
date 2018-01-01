@@ -1,11 +1,13 @@
 package com.example.alexandre.geoindoor;
 
+import android.app.NotificationChannel;
 import android.app.NotificationManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
@@ -38,15 +40,6 @@ public class onMessageReceived extends FirebaseMessagingService {
         String dataLatitude = remoteMessage.getData().get("latitude");
         String dataLongitude = remoteMessage.getData().get("longitude");
 
-        Log.d("sendNotification", dataTitle);
-        Log.d("sendNotification", dataMessage);
-        Log.d("sendNotification", dataAsked);
-        Log.d("sendNotification", dataReceiver);
-        Log.d("sendNotification", dataSender);
-        Log.d("sendNotification", dataLamp);
-        Log.d("sendNotification", dataLatitude);
-        Log.d("sendNotification", dataLongitude);
-
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("title", dataTitle);
         intent.putExtra("message", dataMessage);
@@ -63,7 +56,7 @@ public class onMessageReceived extends FirebaseMessagingService {
         PendingIntent pendingIntent = PendingIntent.getActivity(this, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "default")
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "notify_001")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(dataTitle)
                 .setContentText(dataMessage)
@@ -72,8 +65,13 @@ public class onMessageReceived extends FirebaseMessagingService {
                 .setContentIntent(pendingIntent);
 
         NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
-
-        notificationManager.notify((int)System.currentTimeMillis(), notificationBuilder.build());
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            NotificationChannel channel = new NotificationChannel("notify_001",
+                    "Channel human readable title",
+                    NotificationManager.IMPORTANCE_DEFAULT);
+            notificationManager.createNotificationChannel(channel);
+        }
+        notificationManager.notify(requestID, notificationBuilder.build());
         Log.d("sendNotification", "End");
     }
 }
