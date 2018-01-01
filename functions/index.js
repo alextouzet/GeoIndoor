@@ -22,12 +22,12 @@ console.log('Push notification event triggered');
             message: valueObject.message,
             receiver: valueObject.receiver,
             sender: valueObject.sender,
-            /*lamp: valueObject.lamp,
+            lamp: valueObject.lamp,
             longitude: valueObject.longitude,
-            latitude: valueObject.latitude,*/
+            latitude: valueObject.latitude,
             asked: valueObject.asked
         }
-    };
+    }
 /* Create an options object that contains the time to live for the notification and the priority. */
     const options = {
         priority: "high",
