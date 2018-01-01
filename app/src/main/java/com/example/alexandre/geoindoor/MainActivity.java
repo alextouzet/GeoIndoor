@@ -2,70 +2,69 @@ package com.example.alexandre.geoindoor;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
-import android.location.Criteria;
 import android.location.Location;
-import android.location.LocationManager;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
 import android.util.Log;
 import android.util.Pair;
-import android.view.Gravity;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.TextView;
-import android.widget.Toast;
 
+import com.google.android.gms.common.ConnectionResult;
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationListener;
+import com.google.android.gms.location.LocationRequest;
+import com.google.android.gms.location.LocationServices;
 import com.google.android.gms.maps.CameraUpdateFactory;
 import com.google.android.gms.maps.GoogleMap;
 import com.google.android.gms.maps.OnMapReadyCallback;
 import com.google.android.gms.maps.SupportMapFragment;
-import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
-import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
-import com.google.firebase.iid.FirebaseInstanceId;
 import com.google.firebase.messaging.FirebaseMessaging;
-import com.lize.oledcomm.camera_lifisdk_android.ILiFiPosition;
 import com.lize.oledcomm.camera_lifisdk_android.LiFiSdkManager;
-import com.lize.oledcomm.camera_lifisdk_android.V1.LiFiCamera;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 
-public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
+public class MainActivity extends AppCompatActivity implements OnMapReadyCallback, GoogleApiClient.ConnectionCallbacks,
+        GoogleApiClient.OnConnectionFailedListener,
+        LocationListener {
 
     private LiFiSdkManager liFiSdkManager;
+
     private String detectedLamp, lamp = "";
     private Double longitude, latitude;
     private SupportMapFragment fragment;
-    String name = "";
+    private String name = "";
     private GoogleMap map;
 
-    LocationManager mLocationManager;
+    LocationRequest mLocationRequest;
+    GoogleApiClient googleApiClient;
+    Location mLastLocation;
+    Marker mCurrLocationMarker;
 
     List<String> names = new ArrayList<>();
     List<String> ids = new ArrayList<>();
@@ -79,7 +78,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         SharedPreferences prefs = getSharedPreferences("id", 0);
 
-        if (!prefs.contains("id")){
+        if (!prefs.contains("id")) {
             SharedPreferences.Editor mEditor = prefs.edit();
             mEditor.putString("id", UUID.randomUUID().toString()).commit();
         }
@@ -115,8 +114,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     names.add(currname);
                     ids.add(dataSnapshot.getKey());
                     adapter.notifyDataSetChanged();
-                }
-                else
+                } else
                     name = currname;
             }
 
@@ -199,14 +197,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onNewIntent(intent);
         if (intent.getExtras() != null) {
             Log.d("onNewIntent", intent.getExtras().keySet().toString());
-            if ( intent.getExtras().get("asked").equals("false")) {
-                findLatLng();
+            if (intent.getExtras().get("asked").equals("false")) {
 
                 DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
                 Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"), "Voici ma position", "Signé: " + name, lamp, latitude, longitude);
                 messageRef.push().setValue(message);
-            }
-            else {
+            } else {
                 Double latitude = Double.parseDouble((String) intent.getExtras().get("latitude"));
                 Double longitude = Double.parseDouble((String) intent.getExtras().get("longitude"));
                 MarkerOptions marker = new MarkerOptions()
@@ -217,7 +213,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 Log.d("presque", sender);
                 for (int i = 0; i < markers.size(); i++) {
                     Log.d("presque" + i, markers.get(i).first);
-
                     if (markers.get(i).first.equals(sender)) {
                         markers.get(i).second.visible(false);
                         markers.remove(i);
@@ -268,58 +263,104 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             liFiSdkManager.release();
             liFiSdkManager = null;
         }
+        if (googleApiClient != null) {
+            LocationServices.FusedLocationApi.removeLocationUpdates(googleApiClient, this);
+        }
     }
 
     @Override
-    public void onMapReady(GoogleMap googleMap) {
+    public void onMapReady(final GoogleMap googleMap) {
         this.map = googleMap;
 
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.ACCESS_FINE_LOCATION)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        1);
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+                buildGoogleApiClient();
+                googleMap.setMyLocationEnabled(true);
             }
-        }
-        findLatLng();
-        googleMap.setMyLocationEnabled(true);
-        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
+            else
+                checkLocationPermission();
     }
 
-    public void findLatLng() {
+    protected synchronized void buildGoogleApiClient() {
+        googleApiClient = new GoogleApiClient.Builder(this)
+                .addConnectionCallbacks(this)
+                .addOnConnectionFailedListener(this)
+                .addApi(LocationServices.API)
+                .build();
+        googleApiClient.connect();
+    }
+
+    @Override
+    public void onConnected(Bundle bundle) {
+        mLocationRequest = new LocationRequest();
+        mLocationRequest.setInterval(5000);
+        mLocationRequest.setFastestInterval(5000);
+        mLocationRequest.setPriority(LocationRequest.PRIORITY_BALANCED_POWER_ACCURACY);
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED)
+            LocationServices.FusedLocationApi.requestLocationUpdates(googleApiClient, mLocationRequest, this);
+    }
+
+    @Override
+    public void onConnectionSuspended(int i) {
+
+    }
+
+    @Override
+    public void onConnectionFailed(@NonNull ConnectionResult connectionResult) {
+
+    }
+
+    @Override
+    public void onLocationChanged(Location location) {
+        Log.d("onLocationChanged", location.toString());
+        mLastLocation = location;
+        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,11));
+    }
+
+    public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
+    private void checkLocationPermission() {
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.ACCESS_FINE_LOCATION)) {
             } else {
                 ActivityCompat.requestPermissions(this,
                         new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                        1);
+                        MY_PERMISSIONS_REQUEST_LOCATION);
             }
         }
-        mLocationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
-        List<String> providers = mLocationManager.getProviders(true);
-        Location bestLocation = null;
+    }
 
-        for (String provider : providers) {
-            Location l = mLocationManager.getLastKnownLocation(provider);
-            if (l == null) {
-                continue;
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String permissions[], int[] grantResults) {
+        switch (requestCode) {
+            case MY_PERMISSIONS_REQUEST_LOCATION: {
+                // If request is cancelled, the result arrays are empty.
+                if (grantResults.length > 0
+                        && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+
+                    // permission was granted, yay! Do the
+                    // location-related task you need to do.
+                    if (ContextCompat.checkSelfPermission(this,
+                            Manifest.permission.ACCESS_FINE_LOCATION)
+                            == PackageManager.PERMISSION_GRANTED) {
+
+                        if (googleApiClient == null) {
+                            buildGoogleApiClient();
+                        }
+                        map.setMyLocationEnabled(true);
+                    }
+
+                }
             }
-            if (bestLocation == null || l.getAccuracy() < bestLocation.getAccuracy()) {
-                // Found best last known location:
-                bestLocation = l;
-            }
-        }
-        if(bestLocation != null) {
-            longitude = bestLocation.getLongitude();
-            latitude = bestLocation.getLatitude();
+
+            // other 'case' lines to check for other
+            // permissions this app might request
         }
     }
 
     public void subscribeToTopic() {
         FirebaseMessaging.getInstance().subscribeToTopic("notifications");
-        Log.d("Subscribe to","notifications");
+        Log.d("Subscribe to", "notifications");
     }
+
 }
