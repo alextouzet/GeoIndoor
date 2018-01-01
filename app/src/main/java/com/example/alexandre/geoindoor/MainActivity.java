@@ -69,7 +69,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     List<String> names = new ArrayList<>();
     List<String> ids = new ArrayList<>();
-    List<Marker> markers = new ArrayList<>();
+    List<Pair<String, MarkerOptions>> markers = new ArrayList<>();
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -199,29 +199,29 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (intent.getExtras() != null) {
             Log.d("onNewIntent", intent.getExtras().keySet().toString());
             if ( intent.getExtras().get("asked").equals("false")) {
-                Log.d("onNewIntent", "fo");
                 DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
+                findLatLng();
                 Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"),
-                        "Voici ma position",
-                        name,
-                        lamp,
-                        latitude,
-                        longitude);
-                messageRef.push().setValue(message).addOnCompleteListener(new OnCompleteListener<Void>() {
-                    @Override
-                    public void onComplete(@NonNull Task<Void> task) {
-                        Log.d("sexe", "cho");
-                    }
-                });
+                        "Voici ma position", name, lamp, latitude, longitude);
+                messageRef.push().setValue(message);
             }
             else {
-                Log.d("onNewIntent", "vr");
-                latitude = Double.parseDouble((String) intent.getExtras().get("latitude"));
-                longitude = Double.parseDouble((String) intent.getExtras().get("longitude"));
-                map.addMarker(new MarkerOptions()
+                Double latitude = Double.parseDouble((String) intent.getExtras().get("latitude"));
+                Double longitude = Double.parseDouble((String) intent.getExtras().get("longitude"));
+                MarkerOptions marker = new MarkerOptions()
                         .position(new LatLng(latitude, longitude))
                         .title((String) intent.getExtras().get("message"))
-                        .snippet(latitude+", "+longitude));
+                        .snippet(latitude+", "+longitude);
+                int i = 0;
+                String sender = (String) intent.getExtras().get("sender");
+                for (i = 0; i < markers.size(); i++) {
+                    if (markers.get(i).equals(sender)) {
+                        markers.get(i).second.visible(false);
+                        markers.remove(i);
+                    }
+                }
+                markers.add(new Pair(sender, marker));
+                map.addMarker(marker);
 
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
             }
@@ -270,8 +270,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     @Override
     public void onMapReady(GoogleMap googleMap) {
         this.map = googleMap;
-        LocationManager lm = (LocationManager) getSystemService(Context.LOCATION_SERVICE);
-        Criteria criteria = new Criteria();
 
         if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
@@ -282,7 +280,21 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                         1);
             }
         }
+        findLatLng();
+        googleMap.setMyLocationEnabled(true);
+        googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
+    }
 
+    public void findLatLng() {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.ACCESS_FINE_LOCATION)) {
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
+                        1);
+            }
+        }
         mLocationManager = (LocationManager)getApplicationContext().getSystemService(LOCATION_SERVICE);
         List<String> providers = mLocationManager.getProviders(true);
         Location bestLocation = null;
@@ -300,13 +312,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(bestLocation != null) {
             longitude = bestLocation.getLongitude();
             latitude = bestLocation.getLatitude();
-            googleMap.addMarker(new MarkerOptions()
-                    .position(new LatLng(latitude, longitude))
-                    .title("Votre position")
-                    .snippet(latitude+", "+longitude)
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE)));
-
-            googleMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
         }
     }
 
