@@ -313,8 +313,9 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onLocationChanged(Location location) {
         Log.d("onLocationChanged", location.toString());
         mLastLocation = location;
-        LatLng latLng = new LatLng(location.getLatitude(), location.getLongitude());
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(latLng,11));
+        latitude = location.getLatitude();
+        longitude = location.getLongitude();
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude),11));
     }
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
