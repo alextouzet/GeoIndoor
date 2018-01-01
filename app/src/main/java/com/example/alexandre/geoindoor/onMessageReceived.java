@@ -6,7 +6,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.support.v7.app.NotificationCompat;
+import android.support.v4.app.NotificationCompat;
 import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
@@ -27,6 +27,8 @@ public class onMessageReceived extends FirebaseMessagingService {
 
     private void sendNotification(RemoteMessage remoteMessage) {
 
+        Log.d("sendNotification", "Begin");
+
         String dataTitle = remoteMessage.getData().get("title");
         String dataMessage = remoteMessage.getData().get("message");
         String dataAsked = remoteMessage.getData().get("asked");
@@ -35,6 +37,15 @@ public class onMessageReceived extends FirebaseMessagingService {
         String dataLamp = remoteMessage.getData().get("lamp");
         String dataLatitude = remoteMessage.getData().get("latitude");
         String dataLongitude = remoteMessage.getData().get("longitude");
+
+        Log.d("sendNotification", dataTitle);
+        Log.d("sendNotification", dataMessage);
+        Log.d("sendNotification", dataAsked);
+        Log.d("sendNotification", dataReceiver);
+        Log.d("sendNotification", dataSender);
+        Log.d("sendNotification", dataLamp);
+        Log.d("sendNotification", dataLatitude);
+        Log.d("sendNotification", dataLongitude);
 
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("title", dataTitle);
@@ -49,11 +60,10 @@ public class onMessageReceived extends FirebaseMessagingService {
         int requestID = (int) System.currentTimeMillis();
 
         intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, requestID, intent,
-                PendingIntent.FLAG_UPDATE_CURRENT);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, requestID, intent, PendingIntent.FLAG_UPDATE_CURRENT);
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
-        NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
+        NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this, "default")
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(dataTitle)
                 .setContentText(dataMessage)
@@ -61,9 +71,9 @@ public class onMessageReceived extends FirebaseMessagingService {
                 .setSound(defaultSoundUri)
                 .setContentIntent(pendingIntent);
 
-        NotificationManager notificationManager =
-                (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
+        NotificationManager notificationManager = (NotificationManager) getSystemService(Context.NOTIFICATION_SERVICE);
 
-        notificationManager.notify(0 /* ID of notification */, notificationBuilder.build());
+        notificationManager.notify((int)System.currentTimeMillis(), notificationBuilder.build());
+        Log.d("sendNotification", "End");
     }
 }
