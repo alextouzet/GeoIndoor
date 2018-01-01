@@ -2,12 +2,12 @@ package com.example.alexandre.geoindoor;
 public class Message {
 
 
-    public boolean asked;
-    public String receiver, sender, title, message, lamp;
-    public double latitude, longitude;
+    public Boolean asked;
+    public String receiver, sender, title, message;//, lamp = "";
+    //public Double latitude = 0d, longitude = 0d;
 
     public Message(String receiver, String sender, String title, String message) {
-        this.asked = false;
+        this.asked = Boolean.FALSE;
         this.receiver = receiver;
         this.sender = sender;
         this.title = title;
@@ -15,13 +15,13 @@ public class Message {
     }
 
     public Message(String receiver, String sender, String title, String message, String lamp, double latitude, double longitude) {
-        this.asked = true;
+        this.asked = Boolean.TRUE;
         this.receiver = receiver;
         this.sender = sender;
         this.title = title;
         this.message = message;
-        this.lamp = lamp;
-        this.longitude = longitude;
-        this.latitude = latitude;
+        //this.lamp = lamp;
+        //this.longitude = longitude;
+        //this.latitude = latitude;
     }
 }

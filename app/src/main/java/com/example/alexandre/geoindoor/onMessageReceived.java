@@ -19,25 +19,46 @@ public class onMessageReceived extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        if (remoteMessage.getData().get("receiver").equals(getSharedPreferences("id", 0).getString("id", "0")))
-            sendNotification(remoteMessage);
+
+        Log.d(TAG, "enter onMessageReceived");
+        /* There are two types of messages data messages and notification messages. Data messages are handled here in onMessageReceived whether the app is in the foreground or background. Data messages are the type traditionally used with GCM. Notification messages are only received here in onMessageReceived when the app is in the foreground. When the app is in the background an automatically generated notification is displayed. */
+
+        Log.d("data", remoteMessage.getData().toString());
+        String dataTitle = null, dataMessage = null;
+
+        // Check if message contains a data payload.
+        if (remoteMessage.getData().size() > 0) {
+            Log.d(TAG, "Message data payload: " + remoteMessage.getData().get("message"));
+            dataTitle = remoteMessage.getData().get("title");
+            dataMessage = remoteMessage.getData().get("message");
+
+            // Check if message contains a notification payload.
+        /*if (remoteMessage.getNotification() != null) {
+            Log.d(TAG, "Message Notification Body: " + remoteMessage.getNotification().getBody());
+            notificationTitle = remoteMessage.getNotification().getTitle();
+            notificationBody = remoteMessage.getNotification().getBody();
+        }*/
+
+            // Also if you intend on generating your own notifications as a result of a received FCM
+            // message, here is where that should be initiated. See sendNotification method below.
+
+            if (remoteMessage.getData().get("receiver").equals(getSharedPreferences("id", 0).getString("id", "0")))
+                sendNotification(dataTitle, dataMessage);
+        }
     }
 
-    private void sendNotification(RemoteMessage remoteMessage) {
-
-        String dataTitle = remoteMessage.getData().get("title");
-        String dataMessage = remoteMessage.getData().get("message");
-        String dataAsked = remoteMessage.getData().get("asked");
-
+    /**
+     //     * Create and show a simple notification containing the received FCM message.
+     //     */
+    private void sendNotification(String dataTitle, String dataMessage) {
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("title", dataTitle);
         intent.putExtra("message", dataMessage);
-        intent.putExtra("asked", dataAsked);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);
 
-        Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
+        Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
                 .setSmallIcon(R.mipmap.ic_launcher)
                 .setContentTitle(dataTitle)

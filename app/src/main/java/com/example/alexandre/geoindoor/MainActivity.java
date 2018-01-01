@@ -56,16 +56,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LiFiSdkManager liFiSdkManager;
     private String detectedLamp, lamp;
-    private double longitude, latitude;
+    private Double longitude, latitude;
     private SupportMapFragment fragment;
     String name = "";
     private GoogleMap map;
 
-    private boolean loaded = false;
-
     LocationManager mLocationManager;
 
-    //K: ID, V: Name
     List<String> names = new ArrayList<>();
     List<String> ids = new ArrayList<>();
     List<Marker> markers = new ArrayList<>();
@@ -80,8 +77,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             if (!(boolean) getIntent().getExtras().get("asked")) {
 
                 DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
-                messageRef.push().setValue
-                        (new Message(
+                messageRef.push().setValue(new Message(
                                 (String) getIntent().getExtras().get("receiver"),
                                 (String) getIntent().getExtras().get("sender"),
                                 "Voici ma position",
@@ -90,8 +86,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                                 latitude,
                                 longitude
                         ));
-
-
             }
             else{
                 latitude = Double.parseDouble((String) getIntent().getExtras().get("latitude"));
@@ -105,7 +99,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
     }
-
 
     protected void onStart() {
         super.onStart();
@@ -182,20 +175,14 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mFriendsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                // Get the selected item text from ListView
-                String selectedItem = (String) parent.getItemAtPosition(position);
                 Log.d("BUTTONCLICK", ids.get(position));
                 DatabaseReference messageRef = database.getReference("messages");
-                messageRef.push().setValue
-                        (new Message(
-                                ids.get(position),
-                                token,
-                                "Position request",
-                                "De la part de: " + name));
+                Message message = new Message(ids.get(position), token, "Position request", "De la part de: " + name);
+                messageRef.push().setValue(message);
             }
         });
-        subscribeToTopic();
 
+        subscribeToTopic();
     }
 
     protected void onResume() {
