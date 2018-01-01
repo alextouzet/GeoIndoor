@@ -29,14 +29,27 @@ public class onMessageReceived extends FirebaseMessagingService {
         String dataTitle = remoteMessage.getData().get("title");
         String dataMessage = remoteMessage.getData().get("message");
         String dataAsked = remoteMessage.getData().get("asked");
+        String dataReceiver = remoteMessage.getData().get("receiver");
+        String dataSender = remoteMessage.getData().get("sender");
+        String dataLamp = remoteMessage.getData().get("lamp");
+        String dataLatitude = remoteMessage.getData().get("latitude");
+        String dataLongitude = remoteMessage.getData().get("longitude");
 
         Intent intent = new Intent(this, MainActivity.class);
         intent.putExtra("title", dataTitle);
         intent.putExtra("message", dataMessage);
         intent.putExtra("asked", dataAsked);
-        intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
-        PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
-                PendingIntent.FLAG_ONE_SHOT);
+        intent.putExtra("receiver", dataReceiver);
+        intent.putExtra("sender", dataSender);
+        intent.putExtra("lamp", dataLamp);
+        intent.putExtra("latitude", dataLatitude);
+        intent.putExtra("longitude", dataLongitude);
+
+        int requestID = (int) System.currentTimeMillis();
+
+        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        PendingIntent pendingIntent = PendingIntent.getActivity(this, requestID, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT);
 
         Uri defaultSoundUri = RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = (NotificationCompat.Builder) new NotificationCompat.Builder(this)
