@@ -17,7 +17,8 @@ public class onMessageReceived extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        Log.d(TAG, "enter onMessageReceived");
+        Log.d("onMessageReceived", remoteMessage.getData().get("receiver"));
+        Log.d("onMessageReceived", getSharedPreferences("id", 0).getString("id", "0"));
         if (remoteMessage.getData().size() > 0) {
             if (remoteMessage.getData().get("receiver").equals(getSharedPreferences("id", 0).getString("id", "0")))
                 sendNotification(remoteMessage);

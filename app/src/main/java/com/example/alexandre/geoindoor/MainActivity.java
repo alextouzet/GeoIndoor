@@ -246,12 +246,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 myRef.child("name").setValue(name);
             }
         });
-        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.cancel();
-            }
-        });
 
         builder.show();
     }
@@ -315,7 +309,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mLastLocation = location;
         latitude = location.getLatitude();
         longitude = location.getLongitude();
-        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude),11));
+        map.moveCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude),14));
     }
 
     public static final int MY_PERMISSIONS_REQUEST_LOCATION = 99;
