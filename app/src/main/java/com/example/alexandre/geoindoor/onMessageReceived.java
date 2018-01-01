@@ -47,7 +47,7 @@ public class onMessageReceived extends FirebaseMessagingService {
 
         int requestID = (int) System.currentTimeMillis();
 
-        intent.setFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP|Intent.FLAG_ACTIVITY_SINGLE_TOP);
+        intent.setFlags(Intent.FLAG_ACTIVITY_SINGLE_TOP|Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, requestID, intent,
                 PendingIntent.FLAG_UPDATE_CURRENT);
 

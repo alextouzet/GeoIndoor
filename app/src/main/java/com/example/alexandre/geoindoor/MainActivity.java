@@ -4,12 +4,14 @@ import android.Manifest;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Criteria;
 import android.location.Location;
 import android.location.LocationManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
@@ -33,6 +35,8 @@ import com.google.android.gms.maps.model.BitmapDescriptorFactory;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.database.ChildEventListener;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -55,7 +59,7 @@ import java.util.UUID;
 public class MainActivity extends AppCompatActivity implements OnMapReadyCallback {
 
     private LiFiSdkManager liFiSdkManager;
-    private String detectedLamp, lamp;
+    private String detectedLamp, lamp = "";
     private Double longitude, latitude;
     private SupportMapFragment fragment;
     String name = "";
@@ -92,10 +96,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         users.addListenerForSingleValueEvent(new ValueEventListener() {
             @Override
             public void onDataChange(final DataSnapshot dataSnapshot) {
-
-                if (!dataSnapshot.hasChild(token)) {
+                if (!dataSnapshot.hasChild(token))
                     addUserToDB(database, token);
-                }
             }
 
             @Override
@@ -153,6 +155,20 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         subscribeToTopic();
 
+        fragment = (SupportMapFragment) getSupportFragmentManager()
+                .findFragmentById(R.id.map);
+        fragment.getMapAsync(this);
+
+        /*if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
+                    Manifest.permission.CAMERA)) {
+            } else {
+                ActivityCompat.requestPermissions(this,
+                        new String[]{Manifest.permission.CAMERA},
+                        1);
+            }
+        }
+
         liFiSdkManager = new LiFiSdkManager(this, LiFiSdkManager.CAMERA_LIB_VERSION_0_1,
                 "token", "user", new ILiFiPosition() {
             @Override
@@ -169,7 +185,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         liFiSdkManager.setLocationRequestMode(LiFiSdkManager.LOCATION_REQUEST_OFFLINE_MODE);
         liFiSdkManager.init(R.id.Layout, LiFiCamera.FRONT_CAMERA);
-        //liFiSdkManager.start();
+        liFiSdkManager.start();*/
 
     }
 
@@ -177,51 +193,43 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         super.onStart();
     }
 
-    protected void onResume() {
-        super.onResume();
-        if (getIntent().getExtras() != null) {
-            if ( getIntent().getExtras().get("asked").equals("false")) {
-
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        if (intent.getExtras() != null) {
+            Log.d("onNewIntent", intent.getExtras().keySet().toString());
+            if ( intent.getExtras().get("asked").equals("false")) {
+                Log.d("onNewIntent", "fo");
                 DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
-                Log.d("caca", "" + latitude);
-                Log.d("caca", "" + longitude);
-                Message message = new Message((String) getIntent().getExtras().get("receiver"), (String) getIntent().getExtras().get("sender"),
+                Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"),
                         "Voici ma position",
                         name,
                         lamp,
                         latitude,
                         longitude);
-                messageRef.push().setValue(message);
+                messageRef.push().setValue(message).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        Log.d("sexe", "cho");
+                    }
+                });
             }
             else {
-                latitude = Double.parseDouble((String) getIntent().getExtras().get("latitude"));
-                longitude = Double.parseDouble((String) getIntent().getExtras().get("longitude"));
+                Log.d("onNewIntent", "vr");
+                latitude = Double.parseDouble((String) intent.getExtras().get("latitude"));
+                longitude = Double.parseDouble((String) intent.getExtras().get("longitude"));
                 map.addMarker(new MarkerOptions()
                         .position(new LatLng(latitude, longitude))
-                        .title((String) getIntent().getExtras().get("message"))
+                        .title((String) intent.getExtras().get("message"))
                         .snippet(latitude+", "+longitude));
 
                 map.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 14));
             }
         }
+    }
 
-        //CREATION DE LA CARTE GOOGLE
-
-        fragment = (SupportMapFragment) getSupportFragmentManager()
-                .findFragmentById(R.id.map);
-        fragment.getMapAsync(this);
-
-        //LIFI
-
-        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
-            if (ActivityCompat.shouldShowRequestPermissionRationale(this,
-                    Manifest.permission.CAMERA)) {
-            } else {
-                ActivityCompat.requestPermissions(this,
-                        new String[]{Manifest.permission.CAMERA},
-                        1);
-            }
-        }
+    protected void onResume() {
+        super.onResume();
     }
 
     private void addUserToDB(final FirebaseDatabase database, final String token) {
@@ -292,8 +300,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if(bestLocation != null) {
             longitude = bestLocation.getLongitude();
             latitude = bestLocation.getLatitude();
-            Log.d("tamere", "" + latitude);
-            Log.d("tamere", "" + longitude);
             googleMap.addMarker(new MarkerOptions()
                     .position(new LatLng(latitude, longitude))
                     .title("Votre position")
