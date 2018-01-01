@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     List<String> names = new ArrayList<>();
     List<String> ids = new ArrayList<>();
     List<Pair<String, MarkerOptions>> markers = new ArrayList<>();
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -146,9 +147,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         mFriendsList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
-                Log.d("BUTTONCLICK", ids.get(position));
                 DatabaseReference messageRef = database.getReference("messages");
-                Message message = new Message(ids.get(position), token, "Position request", "De la part de: " + name);
+                Message message = new Message(ids.get(position), token, "Demande de position", "De la part de: " + name);
                 messageRef.push().setValue(message);
             }
         });
@@ -159,7 +159,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 .findFragmentById(R.id.map);
         fragment.getMapAsync(this);
 
-        /*if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.CAMERA) != PackageManager.PERMISSION_GRANTED) {
             if (ActivityCompat.shouldShowRequestPermissionRationale(this,
                     Manifest.permission.CAMERA)) {
             } else {
@@ -169,7 +169,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
 
-        liFiSdkManager = new LiFiSdkManager(this, LiFiSdkManager.CAMERA_LIB_VERSION_0_1,
+        /*liFiSdkManager = new LiFiSdkManager(this, LiFiSdkManager.CAMERA_LIB_VERSION_0_1,
                 "token", "user", new ILiFiPosition() {
             @Override
             public void onLiFiPositionUpdate(String lamp) {
@@ -189,6 +189,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     }
 
+    @Override
     protected void onStart() {
         super.onStart();
     }
@@ -199,10 +200,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         if (intent.getExtras() != null) {
             Log.d("onNewIntent", intent.getExtras().keySet().toString());
             if ( intent.getExtras().get("asked").equals("false")) {
-                DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
                 findLatLng();
-                Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"),
-                        "Voici ma position", name, lamp, latitude, longitude);
+
+                DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
+                Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"), "Voici ma position", "Signé: " + name, lamp, latitude, longitude);
                 messageRef.push().setValue(message);
             }
             else {
@@ -211,11 +212,13 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                 MarkerOptions marker = new MarkerOptions()
                         .position(new LatLng(latitude, longitude))
                         .title((String) intent.getExtras().get("message"))
-                        .snippet(latitude+", "+longitude);
-                int i = 0;
+                        .snippet(latitude + ", " + longitude);
                 String sender = (String) intent.getExtras().get("sender");
-                for (i = 0; i < markers.size(); i++) {
-                    if (markers.get(i).equals(sender)) {
+                Log.d("presque", sender);
+                for (int i = 0; i < markers.size(); i++) {
+                    Log.d("presque" + i, markers.get(i).first);
+
+                    if (markers.get(i).first.equals(sender)) {
                         markers.get(i).second.visible(false);
                         markers.remove(i);
                     }
