@@ -19,7 +19,13 @@ console.log('Push notification event triggered');
         },
         data: {
             title: valueObject.title,
-            message: valueObject.message
+            message: valueObject.message,
+            receiver: valueObject.receiver,
+            sender: valueObject.sender,
+            /*lamp: valueObject.lamp,
+            longitude: valueObject.longitude,
+            latitude: valueObject.latitude,*/
+            asked: valueObject.asked
         }
     };
 /* Create an options object that contains the time to live for the notification and the priority. */
