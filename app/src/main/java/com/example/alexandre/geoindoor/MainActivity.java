@@ -25,6 +25,7 @@ import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
 import android.widget.EditText;
 import android.widget.ListView;
+import android.widget.TextView;
 
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
@@ -45,7 +46,9 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.google.firebase.messaging.FirebaseMessaging;
+import com.lize.oledcomm.camera_lifisdk_android.ILiFiPosition;
 import com.lize.oledcomm.camera_lifisdk_android.LiFiSdkManager;
+import com.lize.oledcomm.camera_lifisdk_android.V1.LiFiCamera;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -170,7 +173,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             }
         }
 
-        /*liFiSdkManager = new LiFiSdkManager(this, LiFiSdkManager.CAMERA_LIB_VERSION_0_1,
+        liFiSdkManager = new LiFiSdkManager(this, LiFiSdkManager.CAMERA_LIB_VERSION_0_1,
                 "token", "user", new ILiFiPosition() {
             @Override
             public void onLiFiPositionUpdate(String lamp) {
@@ -186,7 +189,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
         liFiSdkManager.setLocationRequestMode(LiFiSdkManager.LOCATION_REQUEST_OFFLINE_MODE);
         liFiSdkManager.init(R.id.Layout, LiFiCamera.FRONT_CAMERA);
-        liFiSdkManager.start();*/
+        liFiSdkManager.start();
 
     }
 
@@ -202,12 +205,16 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             Log.d("onNewIntent", intent.getExtras().keySet().toString());
             if (intent.getExtras().get("asked").equals("false")) {
 
-                DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
-                Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"), "Voici ma position", "Signé: " + name, lamp, latitude, longitude);
-                messageRef.push().setValue(message);
+                if (latitude != null && longitude != null) {
+                    DatabaseReference messageRef = FirebaseDatabase.getInstance().getReference("messages");
+                    Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"), "Voici ma position", "" + name, lamp, latitude, longitude);
+                    messageRef.push().setValue(message);
+                }
             } else {
                 Double latitude = Double.parseDouble((String) intent.getExtras().get("latitude"));
                 Double longitude = Double.parseDouble((String) intent.getExtras().get("longitude"));
+
+
                 MarkerOptions marker = new MarkerOptions()
                         .position(new LatLng(latitude, longitude))
                         .title((String) intent.getExtras().get("message"))
@@ -269,12 +276,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     public void onMapReady(final GoogleMap googleMap) {
         this.map = googleMap;
 
-            if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
-                buildGoogleApiClient();
-                googleMap.setMyLocationEnabled(true);
-            }
-            else
-                checkLocationPermission();
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED) {
+            buildGoogleApiClient();
+            googleMap.setMyLocationEnabled(true);
+        }
+        else
+            checkLocationPermission();
     }
 
     protected synchronized void buildGoogleApiClient() {
