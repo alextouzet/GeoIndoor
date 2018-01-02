@@ -2,22 +2,17 @@ package com.example.alexandre.geoindoor;
 
 import android.Manifest;
 import android.app.AlertDialog;
-import android.app.NotificationChannel;
-import android.app.NotificationManager;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.location.Location;
-import android.os.Build;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.text.InputType;
-import android.util.Log;
 import android.util.Pair;
 import android.view.View;
 import android.view.Window;
@@ -61,7 +56,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private LiFiSdkManager liFiSdkManager;
 
-    private String detectedLamp, lamp = "";
+    private String lamp = "";
     private Double longitude, latitude;
     private SupportMapFragment fragment;
     private String name = "";
@@ -152,7 +147,7 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                 DatabaseReference messageRef = database.getReference("messages");
-                Message message = new Message(ids.get(position), token, "Demande de position", "De la part de: " + name);
+                Message message = new Message(ids.get(position), token, "Demande de position", "De la part de " + name);
                 messageRef.push().setValue(message);
             }
         });
@@ -176,8 +171,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
         liFiSdkManager = new LiFiSdkManager(this, LiFiSdkManager.CAMERA_LIB_VERSION_0_1,
                 "token", "user", new ILiFiPosition() {
             @Override
-            public void onLiFiPositionUpdate(String lamp) {
-                detectedLamp = lamp;
+            public void onLiFiPositionUpdate(String lamp_var) {
+                lamp=lamp_var;
                 TextView locationStatus = findViewById(R.id.locationStatus);
                 if(lamp.contains("No lamp detected")){
                     locationStatus.setText("Scannez une lampe avec l'appareil frontal...");
@@ -202,7 +197,8 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
     protected void onNewIntent(Intent intent) {
         super.onNewIntent(intent);
         if (intent.getExtras() != null) {
-            Log.d("onNewIntent", intent.getExtras().keySet().toString());
+
+            //Si on clique sur une notification "Demande de localisation"
             if (intent.getExtras().get("asked").equals("false")) {
 
                 if (latitude != null && longitude != null) {
@@ -210,19 +206,26 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
                     Message message = new Message((String) intent.getExtras().get("sender"), (String) intent.getExtras().get("receiver"), "Voici ma position", "" + name, lamp, latitude, longitude);
                     messageRef.push().setValue(message);
                 }
+                //Si on clique sur une notification "Localisation reçue"
             } else {
                 Double latitude = Double.parseDouble((String) intent.getExtras().get("latitude"));
                 Double longitude = Double.parseDouble((String) intent.getExtras().get("longitude"));
+                String lamp = (String) intent.getExtras().get("lamp");
 
+                String lamp_info;
+
+                if (lamp.contains("No lamp")) {
+                    lamp_info = "pas de lampe LiFi";
+                } else {
+                    lamp_info = lamp;
+                }
 
                 MarkerOptions marker = new MarkerOptions()
                         .position(new LatLng(latitude, longitude))
                         .title((String) intent.getExtras().get("message"))
-                        .snippet(latitude + ", " + longitude);
+                        .snippet(latitude + ", " + longitude + ", " + lamp_info);
                 String sender = (String) intent.getExtras().get("sender");
-                Log.d("presque", sender);
                 for (int i = 0; i < markers.size(); i++) {
-                    Log.d("presque" + i, markers.get(i).first);
                     if (markers.get(i).first.equals(sender)) {
                         markers.get(i).second.visible(false);
                         markers.remove(i);
@@ -242,12 +245,12 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     private void addUserToDB(final FirebaseDatabase database, final String token) {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Entrez votre nom");
+        builder.setTitle("Bienvenue ! Quel est votre nom ?");
 
         final EditText input = new EditText(this);
         input.setInputType(InputType.TYPE_CLASS_TEXT);
         builder.setView(input);
-
+        builder.setCancelable(false);
         builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
@@ -315,7 +318,6 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
     @Override
     public void onLocationChanged(Location location) {
-        Log.d("onLocationChanged", location.toString());
         mLastLocation = location;
         latitude = location.getLatitude();
         longitude = location.getLongitude();
@@ -357,14 +359,10 @@ public class MainActivity extends AppCompatActivity implements OnMapReadyCallbac
 
                 }
             }
-
-            // other 'case' lines to check for other
-            // permissions this app might request
         }
     }
 
     public void subscribeToTopic() {
         FirebaseMessaging.getInstance().subscribeToTopic("notifications");
-        Log.d("Subscribe to", "notifications");
     }
 }

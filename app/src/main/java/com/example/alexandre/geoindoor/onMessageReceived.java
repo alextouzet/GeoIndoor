@@ -9,7 +9,6 @@ import android.media.RingtoneManager;
 import android.net.Uri;
 import android.os.Build;
 import android.support.v4.app.NotificationCompat;
-import android.util.Log;
 
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
@@ -19,8 +18,6 @@ public class onMessageReceived extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(RemoteMessage remoteMessage) {
-        Log.d("onMessageReceived", remoteMessage.getData().get("receiver"));
-        Log.d("onMessageReceived", getSharedPreferences("id", 0).getString("id", "0"));
         if (remoteMessage.getData().size() > 0) {
             if (remoteMessage.getData().get("receiver").equals(getSharedPreferences("id", 0).getString("id", "0")))
                 sendNotification(remoteMessage);
@@ -28,8 +25,6 @@ public class onMessageReceived extends FirebaseMessagingService {
     }
 
     private void sendNotification(RemoteMessage remoteMessage) {
-
-        Log.d("sendNotification", "Begin");
 
         String dataTitle = remoteMessage.getData().get("title");
         String dataMessage = remoteMessage.getData().get("message");
@@ -72,6 +67,5 @@ public class onMessageReceived extends FirebaseMessagingService {
             notificationManager.createNotificationChannel(channel);
         }
         notificationManager.notify(requestID, notificationBuilder.build());
-        Log.d("sendNotification", "End");
     }
 }
